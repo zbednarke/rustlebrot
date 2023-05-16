@@ -9,7 +9,7 @@ use std::time::Instant;
 
 /// Computes the escape time for a point in the Mandelbrot set.
 ///
-/// `c` is the complex number for the point, and `max_iter` is the maximum
+/// `c` is the complex number for the point and `max_iter` is the maximum
 /// number of iterations to compute. Returns the escape time as a floating
 /// point number.
 fn mandelbrot(c: (f64, f64), max_iter: u32) -> f64 {
