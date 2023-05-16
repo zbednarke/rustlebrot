@@ -158,7 +158,23 @@ fn main() {
     let mut y_range = (-2.0 + zoom_point.1, 2.0 + zoom_point.1);
 
     for frame in zoom_start..zoom_end {
-        let start_time = Instant::now(); // Record the start time
+        // Update the x and y ranges to zoom in
+        let x_center = (x_range.0 + x_range.1) / 2.0;
+        let y_center = (y_range.0 + y_range.1) / 2.0;
+    
+        let x_range_width = (x_range.1 - x_range.0) / zoom_factor.powi(frame as i32);
+        let y_range_width = (y_range.1 - y_range.0) / zoom_factor.powi(frame as i32);
+    
+        x_range = (
+            x_center - x_range_width / 2.0,
+            x_center + x_range_width / 2.0,
+        );
+        y_range = (
+            y_center - y_range_width / 2.0,
+            y_center + y_range_width / 2.0,
+        );
+    
+        let start_time = Instant::now(); // Record the start time        let start_time = Instant::now(); // Record the start time
         let mut img = render_mandelbrot(width, height, max_iter, x_range, y_range);
 
         invert(&mut img);
@@ -171,21 +187,6 @@ fn main() {
             std::process::exit(1);
         }
 
-        // Update the x and y ranges to zoom in
-        let x_center = (x_range.0 + x_range.1) / 2.0;
-        let y_center = (y_range.0 + y_range.1) / 2.0;
-
-        let x_range_width = (x_range.1 - x_range.0) / zoom_factor;
-        let y_range_width = (y_range.1 - y_range.0) / zoom_factor;
-
-        x_range = (
-            x_center - x_range_width / 2.0,
-            x_center + x_range_width / 2.0,
-        );
-        y_range = (
-            y_center - y_range_width / 2.0,
-            y_center + y_range_width / 2.0,
-        );
         let elapsed_time = start_time.elapsed(); // Calculate the elapsed time
         println!(
             "Frame {} saved in {:.2?} seconds. X range: {:?}, Y range: {:?}: ",
