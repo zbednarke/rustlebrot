@@ -149,27 +149,23 @@ fn main() {
     // let zoom_point = (-0.75, 0.109); // The point to zoom in on
     // let zoom_point = (-0.10109636384562, 0.95628651080914);
     // let zoom_point = (-0.77568377, 0.13646737);
-    let zoom_point = (
-        -1.74999841099374081749002483162428393452822172335808534616943930976364725846655540417646727085571962736578151132907961927190726789896685696750162524460775546580822744596887978637416593715319388030232414667046419863755743802804780843375,
-        -0.00000000000000165712469295418692325810961981279189026504290127375760405334498110850956047368308707050735960323397389547038231194872482690340369921750514146922400928554011996123112902000856666847088788158433995358406779259404221904755
-    );
+    let x_center: f64 = -1.74999841099374081749002483162428393452822172335808534616943930976364725846655540417646727085571962736578151132907961927190726789896685696750162524460775546580822744596887978637416593715319388030232414667046419863755743802804780843375;
+    let y_center: f64 = -0.00000000000000165712469295418692325810961981279189026504290127375760405334498110850956047368308707050735960323397389547038231194872482690340369921750514146922400928554011996123112902000856666847088788158433995358406779259404221904755;
 
-    let mut x_range = (-2.0 + zoom_point.0, 2.0 + zoom_point.0);
-    let mut y_range = (-2.0 + zoom_point.1, 2.0 + zoom_point.1);
+    let x_range_initial = (-2.0 + x_center, 2.0 + x_center);
+    let y_range_initial = (-2.0 + y_center, 2.0 + y_center);
 
     for frame in zoom_start..zoom_end {
         // Update the x and y ranges to zoom in
-        let x_center = (x_range.0 + x_range.1) / 2.0;
-        let y_center = (y_range.0 + y_range.1) / 2.0;
     
-        let x_range_width = (x_range.1 - x_range.0) / zoom_factor.powi(frame as i32);
-        let y_range_width = (y_range.1 - y_range.0) / zoom_factor.powi(frame as i32);
+        let x_range_width = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
+        let y_range_width = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
     
-        x_range = (
+        let x_range = (
             x_center - x_range_width / 2.0,
             x_center + x_range_width / 2.0,
         );
-        y_range = (
+        let y_range = (
             y_center - y_range_width / 2.0,
             y_center + y_range_width / 2.0,
         );
