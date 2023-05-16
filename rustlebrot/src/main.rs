@@ -1,10 +1,11 @@
-use image::{ImageBuffer, Rgb};
+use colorgrad::sinebow;
 use image::imageops::invert;
+use image::{ImageBuffer, Rgb};
+use rayon::prelude::*;
+use std::env;
 use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
-use rayon::prelude::*;
-use colorgrad::sinebow;
 
 /// Computes the escape time for a point in the Mandelbrot set.
 ///
@@ -23,7 +24,53 @@ fn mandelbrot(c: (f64, f64), max_iter: u32) -> f64 {
     max_iter as f64
 }
 
-fn render_mandelbrot(width: u32, height: u32, max_iter: u32, x_range: (f64, f64), y_range: (f64, f64)) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
+/// Renders a region of the Mandelbrot set as an image.
+///
+/// This function generates an image of a given region of the Mandelbrot set.
+/// Each pixel in the image corresponds to a point in the complex plane, and
+/// its color is determined by the number of iterations it takes for the
+/// corresponding point to escape the Mandelbrot set, according to the
+/// color_gradient function.
+///
+/// # Arguments
+///
+/// * `width` - The width of the image in pixels.
+/// * `height` - The height of the image in pixels.
+/// * `max_iter` - The maximum number of iterations to determine if a point
+///    is in the Mandelbrot set.
+/// * `x_range` - A tuple representing the range of the x coordinates in the
+///    complex plane to be rendered.
+/// * `y_range` - A tuple representing the range of the y coordinates in the
+///    complex plane to be rendered.
+///
+/// # Returns
+///
+/// * An `ImageBuffer` that represents the rendered image of the region of the
+///   Mandelbrot set.
+///
+/// # Panics
+///
+/// This function will panic if it fails to create an `ImageBuffer` from the
+/// generated pixel data. This can occur if the pixel data is not of the correct
+/// size, i.e., `width` * `height` * 3.
+///
+/// # Examples
+///
+/// ```
+/// let width = 800;
+/// let height = 800;
+/// let max_iter = 1000;
+/// let x_range = (-2.0, 1.0);
+/// let y_range = (-1.5, 1.5);
+/// let img = render_mandelbrot(width, height, max_iter, x_range, y_range);
+/// ```
+fn render_mandelbrot(
+    width: u32,
+    height: u32,
+    max_iter: u32,
+    x_range: (f64, f64),
+    y_range: (f64, f64),
+) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     let scalex: f64 = (x_range.1 - x_range.0) / width as f64;
     let scaley: f64 = (y_range.1 - y_range.0) / height as f64;
 
@@ -58,26 +105,32 @@ fn color_gradient(iters_to_escape: f64) -> (u8, u8, u8) {
     (rgba[0], rgba[1], rgba[2])
 }
 
-
 fn main() {
-    let (width, height) = (1200, 1200);
-    let max_iter = 40000;
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 5 {
+        println!("Usage: mandelbrot <max_iter> <zoom_start> <zoom_end> <zoom_step>");
+        return;
+    }
 
-    let zoom_factor = 1.02;
+    let max_iter: u32 = args[1].parse().expect("max_iter should be an integer");
+    let zoom_start: u32 = args[2].parse().expect("zoom_start should be an integer");
+    let zoom_end: u32 = args[3].parse().expect("zoom_end should be an integer");
+    let zoom_factor: f64 = args[4].parse().expect("zoom_step should be a float");
+
+    let (width, height) = (1200, 1200);
 
     // let zoom_point = (-0.75, 0.109); // The point to zoom in on
     // let zoom_point = (-0.10109636384562, 0.95628651080914);
     // let zoom_point = (-0.77568377, 0.13646737);
     let zoom_point = (
-        -1.74999841099374081749002483162428393452822172335808534616943930976364725846655540417646727085571962736578151132907961927190726789896685696750162524460775546580822744596887978637416593715319388030232414667046419863755743802804780843375, 
+        -1.74999841099374081749002483162428393452822172335808534616943930976364725846655540417646727085571962736578151132907961927190726789896685696750162524460775546580822744596887978637416593715319388030232414667046419863755743802804780843375,
         -0.00000000000000165712469295418692325810961981279189026504290127375760405334498110850956047368308707050735960323397389547038231194872482690340369921750514146922400928554011996123112902000856666847088788158433995358406779259404221904755
     );
 
     let mut x_range = (-2.0 + zoom_point.0, 2.0 + zoom_point.0);
     let mut y_range = (-2.0 + zoom_point.1, 2.0 + zoom_point.1);
 
-
-    for frame in 0..2000 {
+    for frame in zoom_start..zoom_end {
         let start_time = Instant::now(); // Record the start time
         let mut img = render_mandelbrot(width, height, max_iter, x_range, y_range);
 
