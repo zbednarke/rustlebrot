@@ -108,14 +108,41 @@ fn color_gradient(iters_to_escape: f64) -> (u8, u8, u8) {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 5 {
-        println!("Usage: mandelbrot <max_iter> <zoom_start> <zoom_end> <zoom_step>");
-        return;
+        eprintln!("Usage: mandelbrot <max_iter> <zoom_start> <zoom_end> <zoom_factor>");
+        std::process::exit(1);
     }
 
-    let max_iter: u32 = args[1].parse().expect("max_iter should be an integer");
-    let zoom_start: u32 = args[2].parse().expect("zoom_start should be an integer");
-    let zoom_end: u32 = args[3].parse().expect("zoom_end should be an integer");
-    let zoom_factor: f64 = args[4].parse().expect("zoom_step should be a float");
+    let max_iter: u32 = match args[1].parse() {
+        Ok(n) => n,
+        Err(_) => {
+            eprintln!("Error: max_iter should be an integer");
+            std::process::exit(1);
+        }
+    };
+
+    let zoom_start: u32 = match args[2].parse() {
+        Ok(n) => n,
+        Err(_) => {
+            eprintln!("Error: zoom_start should be an integer");
+            std::process::exit(1);
+        }
+    };
+
+    let zoom_end: u32 = match args[3].parse() {
+        Ok(n) => n,
+        Err(_) => {
+            eprintln!("Error: zoom_end should be an integer");
+            std::process::exit(1);
+        }
+    };
+
+    let zoom_factor: f64 = match args[4].parse() {
+        Ok(n) => n,
+        Err(_) => {
+            eprintln!("Error: zoom_factor should be a float");
+            std::process::exit(1);
+        }
+    };
 
     let (width, height) = (1200, 1200);
 
