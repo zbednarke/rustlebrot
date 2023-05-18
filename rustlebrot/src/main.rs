@@ -105,6 +105,79 @@ fn color_gradient(iters_to_escape: f64) -> (u8, u8, u8) {
     (rgba[0], rgba[1], rgba[2])
 }
 
+
+fn render_frame(
+    frame: u32,
+    width: u32,
+    height: u32,
+    max_iter: u32,
+    x_range_initial: (f64, f64),
+    y_range_initial: (f64, f64),
+    x_center: f64,
+    y_center: f64,
+    zoom_factor: f64,
+) {
+    let x_range_width: f64 = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
+    let y_range_width: f64 = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
+
+    let x_range: (f64, f64) = (
+        x_center - x_range_width / 2.0,
+        x_center + x_range_width / 2.0,
+    );
+    let y_range = (
+        y_center - y_range_width / 2.0,
+        y_center + y_range_width / 2.0,
+    );
+
+    let start_time: Instant = Instant::now();
+    let mut img = render_mandelbrot(width, height, max_iter, x_range, y_range);
+
+    invert(&mut img);
+
+    let output_filename = format!("rust_data/mandelbrot_set_{:04}.png", frame);
+
+    let output_path = Path::new(&output_filename);
+    if let Err(e) = img.save(&output_path) {
+        eprintln!("Failed to save image: {}", e);
+        std::process::exit(1);
+    }
+
+    let elapsed_time = start_time.elapsed();
+    println!(
+        "Frame {} saved in {:.2?} seconds.",
+        frame,
+        elapsed_time.as_secs_f64(),
+    );
+}
+
+fn generate_frames(
+    zoom_start: u32,
+    zoom_end: u32,
+    x_range_initial: (f64, f64),
+    y_range_initial: (f64, f64),
+    x_center: f64,
+    y_center: f64,
+    zoom_factor: f64,
+    width: u32,
+    height: u32,
+    max_iter: u32,
+) {
+    (zoom_start..zoom_end).into_par_iter().for_each(|frame| {
+        render_frame(
+            frame,
+            width,
+            height,
+            max_iter,
+            x_range_initial,
+            y_range_initial,
+            x_center,
+            y_center,
+            zoom_factor,
+        );
+    });
+}
+
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 5 {
@@ -155,41 +228,27 @@ fn main() {
     let x_range_initial: (f64, f64) = (-2.0 + x_center, 2.0 + x_center);
     let y_range_initial: (f64, f64) = (-2.0 + y_center, 2.0 + y_center);
 
-    for frame in zoom_start..zoom_end {
-        // Update the x and y ranges to zoom in
+    let program_start_time: Instant = Instant::now();
+
+    generate_frames(
+        zoom_start,
+        zoom_end,
+        x_range_initial,
+        y_range_initial,
+        x_center,
+        y_center,
+        zoom_factor,
+        width,
+        height,
+        max_iter,
+    );
     
-        let x_range_width: f64 = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
-        let y_range_width: f64 = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
-    
-        let x_range: (f64, f64) = (
-            x_center - x_range_width / 2.0,
-            x_center + x_range_width / 2.0,
-        );
-        let y_range = (
-            y_center - y_range_width / 2.0,
-            y_center + y_range_width / 2.0,
-        );
-    
-        let start_time = Instant::now(); // Record the start time        let start_time = Instant::now(); // Record the start time
-        let mut img = render_mandelbrot(width, height, max_iter, x_range, y_range);
+    let program_elapsed_time = program_start_time.elapsed();
+    println!(
+        "Avg time per frame: {:.2?} s.",
+        program_elapsed_time.as_secs_f64() / (zoom_end - zoom_start + 1) as f64,
+    );
 
-        invert(&mut img);
-
-        let output_filename = format!("rust_data/mandelbrot_set_{:04}.png", frame);
-
-        let output_path = Path::new(&output_filename);
-        if let Err(e) = img.save(&output_path) {
-            eprintln!("Failed to save image: {}", e);
-            std::process::exit(1);
-        }
-
-        let elapsed_time = start_time.elapsed(); // Calculate the elapsed time
-        println!(
-            "Frame {} saved in {:.2?} seconds.",
-            frame,
-            elapsed_time.as_secs_f64(),
-        );
-    }
     let output = Command::new("ffmpeg")
         .arg("-framerate")
         .arg("30")
@@ -205,3 +264,138 @@ fn main() {
 
     println!("Output: {}", String::from_utf8_lossy(&output.stdout));
 }
+
+// fn generate_frames_no_rayon(
+//     zoom_start: u32,
+//     zoom_end: u32,
+//     x_range_initial: (f64, f64),
+//     y_range_initial: (f64, f64),
+//     x_center: f64,
+//     y_center: f64,
+//     zoom_factor: f64,
+//     width: u32,
+//     height: u32,
+//     max_iter: u32,
+// ) {
+//     for frame in zoom_start..zoom_end {
+//         // Update the x and y ranges to zoom in
+
+//         let x_range_width: f64 = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
+//         let y_range_width: f64 = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
+
+//         let x_range: (f64, f64) = (
+//             x_center - x_range_width / 2.0,
+//             x_center + x_range_width / 2.0,
+//         );
+//         let y_range = (
+//             y_center - y_range_width / 2.0,
+//             y_center + y_range_width / 2.0,
+//         );
+
+//         let start_time: Instant = Instant::now();
+//         let mut img = render_mandelbrot(width, height, max_iter, x_range, y_range);
+
+//         invert(&mut img);
+
+//         let output_filename = format!("rust_data/mandelbrot_set_{:04}.png", frame);
+
+//         let output_path = Path::new(&output_filename);
+//         if let Err(e) = img.save(&output_path) {
+//             eprintln!("Failed to save image: {}", e);
+//             std::process::exit(1);
+//         }
+
+//         let elapsed_time = start_time.elapsed();
+//         println!(
+//             "Frame {} saved in {:.2?} seconds.",
+//             frame,
+//             elapsed_time.as_secs_f64(),
+//         );
+//     }
+// }
+
+
+// (zoom_start..zoom_end).into_par_iter().for_each(|frame| {
+//     // Update the x and y ranges to zoom in
+
+//     let x_range_width: f64 = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
+//     let y_range_width: f64 = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
+
+//     let x_range: (f64, f64) = (
+//         x_center - x_range_width / 2.0,
+//         x_center + x_range_width / 2.0,
+//     );
+//     let y_range = (
+//         y_center - y_range_width / 2.0,
+//         y_center + y_range_width / 2.0,
+//     );
+
+//     let start_time: Instant = Instant::now();
+//     let mut img = render_mandelbrot(width, height, max_iter, x_range, y_range);
+
+//     invert(&mut img);
+
+//     let output_filename = format!("rust_data/mandelbrot_set_{:04}.png", frame);
+
+//     let output_path = Path::new(&output_filename);
+//     if let Err(e) = img.save(&output_path) {
+//         eprintln!("Failed to save image: {}", e);
+//         std::process::exit(1);
+//     }
+
+//     let elapsed_time = start_time.elapsed();
+//     println!(
+//         "Frame {} saved in {:.2?} seconds.",
+//         frame,
+//         elapsed_time.as_secs_f64(),
+//     );
+// });
+
+    // generate_frames(
+    //     zoom_start,
+    //     zoom_end,
+    //     x_range_initial,
+    //     y_range_initial,
+    //     x_center,
+    //     y_center,
+    //     zoom_factor,
+    //     width,
+    //     height,
+    //     max_iter,
+    // );
+
+    // for frame in zoom_start..zoom_end {
+    //     // Update the x and y ranges to zoom in
+    
+    //     let x_range_width: f64 = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
+    //     let y_range_width: f64 = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
+    
+    //     let x_range: (f64, f64) = (
+    //         x_center - x_range_width / 2.0,
+    //         x_center + x_range_width / 2.0,
+    //     );
+    //     let y_range = (
+    //         y_center - y_range_width / 2.0,
+    //         y_center + y_range_width / 2.0,
+    //     );
+    
+    //     let start_time: Instant = Instant::now();
+    //     let mut img = render_mandelbrot(width, height, max_iter, x_range, y_range);
+
+    //     invert(&mut img);
+
+    //     let output_filename = format!("rust_data/mandelbrot_set_{:04}.png", frame);
+
+    //     let output_path = Path::new(&output_filename);
+    //     if let Err(e) = img.save(&output_path) {
+    //         eprintln!("Failed to save image: {}", e);
+    //         std::process::exit(1);
+    //     }
+
+    //     let elapsed_time = start_time.elapsed();
+    //     println!(
+    //         "Frame {} saved in {:.2?} seconds.",
+    //         frame,
+    //         elapsed_time.as_secs_f64(),
+    //     );
+    // }
