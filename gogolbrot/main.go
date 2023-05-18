@@ -16,31 +16,11 @@ import (
 	"time"
 )
 
-type PixelJob struct {
-	x int
-	y int
-	c complex128
-}
-
-type PixelResult struct {
-	x     int
-	y     int
-	color color.RGBA
-}
-
 type FrameJob struct {
 	frame      int
 	xRange     [2]float64
 	yRange     [2]float64
 	zoomFactor float64
-}
-
-func worker(jobs <-chan PixelJob, results chan<- PixelResult, maxIter int) {
-	for j := range jobs {
-		iterRatio := mandelbrot(j.c, maxIter)
-		color := colorGradient(iterRatio)
-		results <- PixelResult{j.x, j.y, color}
-	}
 }
 
 func mandelbrot(c complex128, maxIter int) float64 {
@@ -58,36 +38,6 @@ func mandelbrot(c complex128, maxIter int) float64 {
 func colorGradient(iterRatio float64) color.RGBA {
 	t := uint8(iterRatio * 255)
 	return color.RGBA{t, t, 255 - t, 255}
-}
-
-func renderMandelbrotPixelRoutines(width, height, maxIter int, xRange, yRange [2]float64) *image.RGBA {
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	scalex := (xRange[1] - xRange[0]) / float64(width)
-	scaley := (yRange[1] - yRange[0]) / float64(height)
-
-	jobs := make(chan PixelJob, width*height)
-	results := make(chan PixelResult, width*height)
-
-	for w := 0; w < runtime.NumCPU(); w++ {
-		go worker(jobs, results, maxIter)
-	}
-
-	go func() {
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				c := complex(float64(x)*scalex+xRange[0], float64(y)*scaley+yRange[0])
-				jobs <- PixelJob{x, y, c}
-			}
-		}
-		close(jobs)
-	}()
-
-	for i := 0; i < width*height; i++ {
-		res := <-results
-		img.Set(res.x, res.y, res.color)
-	}
-
-	return img
 }
 
 func renderMandelbrot(width, height, maxIter int, xRange, yRange [2]float64) *image.RGBA {
@@ -158,10 +108,10 @@ func main() {
 	startTime := time.Now()
 
 	for w := 0; w < runtime.NumCPU(); w++ {
-		wg.Add(1) // Increment the WaitGroup counter
+		wg.Add(1)
 		go func() {
 			workerFrame(jobs, maxIter, width, height)
-			wg.Done() // Signal that this goroutine has finished
+			wg.Done()
 		}()
 	}
 
@@ -173,27 +123,6 @@ func main() {
 
 	wg.Wait()
 
-	// for frame := zoomStart; frame <= zoomEnd; frame++ {
-	// 	startTime := time.Now()
-
-	// 	img := renderMandelbrot(width, height, maxIter, xRange, yRange)
-
-	// 	outputFilename := fmt.Sprintf("go_data/mandelbrot_set_%04d.png", frame)
-	// 	outputFile, _ := os.Create(outputFilename)
-	// 	defer outputFile.Close()
-
-	// 	png.Encode(outputFile, img)
-
-	// 	elapsedTime := time.Since(startTime)
-
-	// 	fmt.Printf("Frame %d generated in %s\n", frame, elapsedTime)
-
-	// 	xRangeWidth := (xRange[1] - xRange[0]) / zoomFactor
-	// 	yRangeWidth := (yRange[1] - yRange[0]) / zoomFactor
-
-	// 	xRange = [2]float64{xCenter - xRangeWidth/2.0, xCenter + xRangeWidth/2.0}
-	// 	yRange = [2]float64{yCenter - yRangeWidth/2.0, yCenter + yRangeWidth/2.0}
-	// }
 	elapsedTime := time.Since(startTime)
 	fmt.Printf("%d frames completed in %v\n", zoomEnd-zoomStart+1, elapsedTime)
 	fmt.Printf("Average time per frame: %f ms.\n", float64(elapsedTime.Milliseconds())/float64(zoomEnd-zoomStart+1))
