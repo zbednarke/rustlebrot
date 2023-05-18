@@ -152,16 +152,16 @@ fn main() {
     let x_center: f64 = -1.74999841099374081749002483162428393452822172335808534616943930976364725846655540417646727085571962736578151132907961927190726789896685696750162524460775546580822744596887978637416593715319388030232414667046419863755743802804780843375;
     let y_center: f64 = -0.00000000000000165712469295418692325810961981279189026504290127375760405334498110850956047368308707050735960323397389547038231194872482690340369921750514146922400928554011996123112902000856666847088788158433995358406779259404221904755;
 
-    let x_range_initial = (-2.0 + x_center, 2.0 + x_center);
-    let y_range_initial = (-2.0 + y_center, 2.0 + y_center);
+    let x_range_initial: (f64, f64) = (-2.0 + x_center, 2.0 + x_center);
+    let y_range_initial: (f64, f64) = (-2.0 + y_center, 2.0 + y_center);
 
     for frame in zoom_start..zoom_end {
         // Update the x and y ranges to zoom in
     
-        let x_range_width = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
-        let y_range_width = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
+        let x_range_width: f64 = (x_range_initial.1 - x_range_initial.0) / zoom_factor.powi(frame as i32);
+        let y_range_width: f64 = (y_range_initial.1 - y_range_initial.0) / zoom_factor.powi(frame as i32);
     
-        let x_range = (
+        let x_range: (f64, f64) = (
             x_center - x_range_width / 2.0,
             x_center + x_range_width / 2.0,
         );
@@ -175,7 +175,7 @@ fn main() {
 
         invert(&mut img);
 
-        let output_filename = format!("data/mandelbrot_set_{:04}.png", frame);
+        let output_filename = format!("rust_data/mandelbrot_set_{:04}.png", frame);
 
         let output_path = Path::new(&output_filename);
         if let Err(e) = img.save(&output_path) {
@@ -185,23 +185,21 @@ fn main() {
 
         let elapsed_time = start_time.elapsed(); // Calculate the elapsed time
         println!(
-            "Frame {} saved in {:.2?} seconds. X range: {:?}, Y range: {:?}: ",
+            "Frame {} saved in {:.2?} seconds.",
             frame,
             elapsed_time.as_secs_f64(),
-            x_range,
-            y_range,
         );
     }
     let output = Command::new("ffmpeg")
         .arg("-framerate")
         .arg("30")
         .arg("-i")
-        .arg("data/mandelbrot_set_%04d.png")
+        .arg("rust_data/mandelbrot_set_%04d.png")
         .arg("-c:v")
         .arg("libx264")
         .arg("-pix_fmt")
         .arg("yuv420p")
-        .arg("out.mp4")
+        .arg("rust_out.mp4")
         .output()
         .expect("Failed to execute command");
 
