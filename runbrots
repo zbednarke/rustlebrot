@@ -1,0 +1,10 @@
+# /bin/bash
+
+cd rustlebrot
+cargo run --release 300 0 120 1.02
+cd ..
+
+cd gogolbrot
+go build main.go && ./main 300 0 120 1.02
+cd ..
+
