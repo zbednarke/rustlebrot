@@ -7,7 +7,7 @@ target/
 data/
 *.DS_Store
 *.mp4
-*.png
+mandelbrot_set*.png
 main
 *.sh
 rust_extras.rs

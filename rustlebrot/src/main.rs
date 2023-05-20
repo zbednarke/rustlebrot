@@ -245,11 +245,11 @@ fn main() {
     
     let program_elapsed_time = program_start_time.elapsed();
     println!(
-        "Avg time per frame: {:.2?} s.",
-        program_elapsed_time.as_secs_f64() / (zoom_end - zoom_start + 1) as f64,
+        "Avg time per frame: {:.2?} ms.",
+        program_elapsed_time.as_millis() as f64 / (zoom_end - zoom_start + 1) as f64,
     );
 
-    let output = Command::new("ffmpeg")
+    Command::new("ffmpeg")
         .arg("-framerate")
         .arg("30")
         .arg("-i")
@@ -262,5 +262,5 @@ fn main() {
         .output()
         .expect("Failed to execute command");
 
-    println!("Output: {}", String::from_utf8_lossy(&output.stdout));
+    println!("Zoom saved to rust_data/rust_out.mp4");
 }

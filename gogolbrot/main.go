@@ -61,7 +61,7 @@ func workerFrame(jobs <-chan FrameJob, maxIter, width, height int) {
 
 		img := renderMandelbrot(width, height, maxIter, j.xRange, j.yRange)
 
-		outputFilename := fmt.Sprintf("mandelbrot_set_%04d.png", j.frame)
+		outputFilename := fmt.Sprintf("go_data/mandelbrot_set_%04d.png", j.frame)
 		outputFile, _ := os.Create(outputFilename)
 		defer outputFile.Close()
 
@@ -104,7 +104,7 @@ func main() {
 
 	jobs := make(chan FrameJob, zoomEnd-zoomStart+1)
 
-	fmt.Printf("About to construct jobs\n")
+	fmt.Printf("Constructing frame jobs\n")
 	startTime := time.Now()
 
 	for w := 0; w < runtime.NumCPU(); w++ {
@@ -127,11 +127,12 @@ func main() {
 	fmt.Printf("%d frames completed in %v\n", zoomEnd-zoomStart+1, elapsedTime)
 	fmt.Printf("Average time per frame: %f ms.\n", float64(elapsedTime.Milliseconds())/float64(zoomEnd-zoomStart+1))
 
-	fmt.Printf("Jobs finished. About to render mp4\n")
-
-	cmd := exec.Command("ffmpeg", "-y", "-framerate", "30", "-i", "go_data/mandelbrot_set_%04d.png", "-c:v", "libx264", "-pix_fmt", "yuv420p", "go_out.mp4")
+	cmd := exec.Command("ffmpeg", "-y", "-framerate", "30", "-i", "go_data//mandelbrot_set_%04d.png", "-c:v", "libx264", "-pix_fmt", "yuv420p", "go_data/go_out.mp4")
 	err := cmd.Run()
 	if err != nil {
 		log.Fatalf("Failed to execute command: %s", err)
 	}
+
+	fmt.Printf("Zoom saved to go_data/go_out.mp4\n")
+
 }

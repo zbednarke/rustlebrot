@@ -1,10 +1,12 @@
 # /bin/bash
 
+echo "Building mandelbrot zoom with rust code"
 cd rustlebrot
-cargo run --release 300 0 120 1.02
+cargo run --release 1000 0 100 1.02
 cd ..
 
+echo "\nBuilding mandelbrot zoom with Go code"
 cd gogolbrot
-go build main.go && ./main 300 0 120 1.02
+go build main.go && ./main 1000 0 100 1.02
 cd ..
 
