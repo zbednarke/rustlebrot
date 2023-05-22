@@ -1,12 +1,14 @@
 # /bin/bash
 
-echo "Building mandelbrot zoom with rust code"
+echo "\nBuilding mandelbrot zoom with main.rs"
 cd rustlebrot
 cargo run --release 1000 0 100 1.02
 cd ..
 
-echo "\nBuilding mandelbrot zoom with Go code"
+echo "\nBuilding mandelbrot zoom with main.go"
 cd gogolbrot
 go build main.go && ./main 1000 0 100 1.02
 cd ..
 
+cd pythobrot
+poetry install
